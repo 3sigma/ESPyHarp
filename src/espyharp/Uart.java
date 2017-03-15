@@ -44,28 +44,38 @@ public class Uart {
     }
     
     static public void connect(Button btnConnect) {
-        String strPort = comboBoxPorts.getSelectionModel().getSelectedItem().toString();
-        serialPort = new SerialPort(strPort);
-        try {
-            serialPort.openPort();
-            serialPort.setParams(115200, 8, 1, 0);//br, databits, stopbits, parity
-            serialPort.purgePort(SerialPort.PURGE_RXCLEAR);
-            serialPort.purgePort(SerialPort.PURGE_TXCLEAR);
-            
-//            int mask = SerialPort.MASK_RXCHAR + SerialPort.MASK_CTS + SerialPort.MASK_DSR;
-            int mask = SerialPort.MASK_RXCHAR;// + SerialPort.MASK_CTS + SerialPort.MASK_DSR;
-            serialPort.setEventsMask(mask);
-            serialPort.addEventListener(new REPL.PortReader());
-            
-            serialPort.writeByte((byte)4); // soft-reset
-            REPL.setDisable(false);//REPL을 활성화시킨다.
-            btnConnect.setDisable(true);
-        } catch (SerialPortException ex) {
-            System.out.println("serial port open error: " + ex);
+        if ((serialPort != null) && (serialPort.isOpened())) {
+            try {
+                serialPort.closePort();
+                btnConnect.setText("Connect");
+            } catch (SerialPortException ex) {
+                System.out.println("serial port close error: " + ex);
+            }            
         }
+        else {
+            String strPort = comboBoxPorts.getSelectionModel().getSelectedItem().toString();
+            serialPort = new SerialPort(strPort);
+            try {
+                serialPort.openPort();
+                serialPort.setParams(115200, 8, 1, 0);//br, databits, stopbits, parity
+                serialPort.purgePort(SerialPort.PURGE_RXCLEAR);
+                serialPort.purgePort(SerialPort.PURGE_TXCLEAR);
 
+    //            int mask = SerialPort.MASK_RXCHAR + SerialPort.MASK_CTS + SerialPort.MASK_DSR;
+                int mask = SerialPort.MASK_RXCHAR;// + SerialPort.MASK_CTS + SerialPort.MASK_DSR;
+                serialPort.setEventsMask(mask);
+                serialPort.addEventListener(new REPL.PortReader());
+
+                serialPort.writeByte((byte)4); // soft-reset
+                REPL.setDisable(false);//REPL을 활성화시킨다.
+                //btnConnect.setDisable(true);
+                btnConnect.setText("Disconnect");
+            } catch (SerialPortException ex) {
+                System.out.println("serial port open error: " + ex);
+            }
+        }
     }
-    
+        
     /**
      * REPL에는 '\r'문자를 전송해야 명령이 실행된다.
      * @param strComm 전송할 문자열. 만약 null이 넘어오면 
